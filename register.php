@@ -67,6 +67,7 @@
         // the database already and we should not allow the user to continue. 
         if($row) 
         { 
+            header("Refresh: 2; url=index.html"); 
             die("This username is already in use"); 
         } 
          
@@ -136,7 +137,7 @@
         } 
          
         // This redirects the user back to the login page after they register 
-        header("Location: index.html"); 
+        header("Location: index.html"); exit; 
          
         // Calling die or exit after performing a redirect using the header function 
         // is critical.  The rest of your PHP script will continue to execute and 
