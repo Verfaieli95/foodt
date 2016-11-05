@@ -6,17 +6,21 @@ require("common.php");
 // Escape user inputs for security
 $food_minimum = $_POST['food_minimum'];
 $water_minimum = $_POST['water_minimum'];
-$temperature = $_POST['temperature'];
-$humidity = $_POST['humidity'];
+$temperature_min = $_POST['temperature_min'];
+$temperature_max = $_POST['temperature_max'];
+$humidity_min = $_POST['humidity_min'];
+$humidity_max= $_POST['humidity_max'];
 $uid = $_SESSION['user']['id'];
 
         $query = " 
-            update users  
+            update devices  
              set 
                 food_minimum = :food_minimum, 
-                water_minimum = :water_minimum, 
-                temperature = :temperature,
-                humidity = :humidity
+                water = :water, 
+                temperature_min = :temperature_min,
+                temperature_max = :temperature_max,
+                humidity_min = :humidity_min,
+                humidity_max = :humidity_max
              WHERE id=:uid;
         "; 
 
@@ -24,9 +28,11 @@ $uid = $_SESSION['user']['id'];
         $query_params = array( 
             ':uid' => $uid,
             ':food_minimum' => $food_minimum, 
-            ':water_minimum' => $water_minimum, 
-            ':temperature' => $temperature, 
-            ':humidity' => $humidity,
+            ':water' => $water, 
+            ':temperature_min' => $temperature_min, 
+            ':temperature_max' => $temperature_max, 
+            ':humidity_min' => $humidity_min,
+            ':humidity_max' => $humidity_max,
         ); 
 
 

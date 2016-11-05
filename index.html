@@ -38,7 +38,7 @@
 					{
                     echo '<div data-role="main" class="ui-content">
                     <a href="#myPopup" data-rel="popup" class="ui-btn ui-btn-inline ui-corner-all ui-icon-check ui-btn-icon-left">Login</a>
-                     <div data-role="popup" id="myPopup" class="ui-content" style="min-width:250px;">
+                    <div data-role="popup" id="myPopup" class="ui-content" style="min-width:250px;">
    
 						 
                         <h1>Login</h1> 
@@ -46,9 +46,9 @@
 						 <div>
 						<label for="usrnm" class="ui-hidden-accessible">Username:</label>
                         <input type="text" name="username" id="usrnm" placeholder="Username">
-					  <label for="pswd" class="ui-hidden-accessible">Password:</label>
-					  <input type="password" name="password" id="pswd" placeholder="Password">
-					  <input type="submit" data-inline="true" value="Log in">
+					    <label for="pswd" class="ui-hidden-accessible">Password:</label>
+					    <input type="password" name="password" id="pswd" placeholder="Password">
+					    <input type="submit" data-inline="true" value="Log in">
 
 						</div>
 						</form> 
@@ -56,6 +56,7 @@
                         <br>
 						<a href="register.php"
                         data-ajax="false">Register</a><br><br>';
+
 					}
 					?>
 					<span class="image avatar"><img src="images/avatar.jpg" alt="" /></span>
@@ -118,18 +119,67 @@
 									</header>
 									<p>
                                     <p>
-                                        <?php
-                                            if(!empty($_SESSION['user'])) 
-                                            {
-                                                echo 'Here you can set minimum amount of food, water, and temperature and humidity levels, below which site will send a notification to your phone. 
+                                    <?php
 
-                                                <form action="insert.php" method="post" data-ajax="false"> 
-                                                Amount of food in grams: <input type="number" min="1" name="food_minimum" id="food_minimum" value=""><br>
-                                                Amount of water in milis: <input type="number" name="water_minimum" min="1" id="water_minimum" value=""><br>
-                                                Temperature in Celsius degrees: <input type="number" name="temperature" min="1" max="50" id="temperature" value=""><br>
-                                                Humidity in %:<input type="number" name="humidity" min="1" max="100" id="humidity" value=""><br>
-                                                <input type="submit" value="Submit">
-                                                </form>';}
+
+
+
+                                    if(!empty($_SESSION['user'])) 
+                                    {  
+                                    echo 'Here you can set minimum amount of food, water, and temperature and humidity levels, below which site will send a notification to your phone. 
+                                    <form action="insert.php" method="post" data-ajax="false">';
+                                        $uid = $_SESSION['user']['id'];
+                                        $query = " 
+                                                    SELECT 
+                                                        food_minimum, 
+                                                        water, 
+                                                        temperature_min, 
+                                                        temperature_max,
+                                                        humidity_min,
+                                                        humidity_max
+                                                    FROM devices 
+                                                    WHERE 
+                                                        id = :uid
+                                                "; 
+                                        $query_params = array( 
+                                            ':uid' => $uid,
+                                        ); 
+
+                                        try 
+                                        { 
+                                            // Execute the query against the database 
+                                            $stmt = $db->prepare($query); 
+                                            $result = $stmt->execute($query_params); 
+                                        } 
+                                        catch(PDOException $ex) 
+                                        { 
+                                            // Note: On a production website, you should not output $ex->getMessage(). 
+                                            // It may provide an attacker with helpful information about your code.  
+                                            die("Please don't leave anything blank!"); 
+                                        } 
+                                        $row = $stmt->fetch(); 
+        if($row) 
+        { 
+        $t = time();
+        echo($t);
+        echo '<br>';
+        echo 'Minimum amount of food in grams: <input type="number" min="1" name="food_minimum" id="food_minimum" value="';
+        echo $row['food_minimum'];
+        echo '"><br>Minimum amount of water in milis: <input type="number" name="water_minimum" min="1" id="water_minimum" value="';
+        echo $row['water'];
+        echo '"><br>Temperature in Celsius degrees between: <input type="number" name="temperature_min" min="1" max="50" id="temperature_min" value="';
+        echo $row['temperature_min'];
+        echo '"><br>and: <input type="number" name="temperature_max" min="1" max="50" id="temperature_max" value="';
+        echo $row['temperature_max'];
+        echo '"><br>Humidity in % between:<input type="number" name="humidity_min" min="1" max="100" id="humidity_min" value="';
+        echo $row['humidity_min'];
+        echo '"><br>and:<input type="number" name="humidity_max" min="1" max="100" id="humidity_max" value="';
+        echo $row['humidity_max'];
+        echo '"><br>';
+        } 
+       echo '<input type="submit" value="Submit">
+                                                </form>';
+                                                            }
                                                                                             else
                                                                                             {
                                                                                             echo "Content here is available only to members. Please register and login!";
