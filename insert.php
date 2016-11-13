@@ -4,33 +4,33 @@ server with default setting (user 'root' with no password) */
 require("common.php"); 
  
 // Escape user inputs for security
-$food_minimum = $_POST['food_minimum'];
-$water_minimum = $_POST['water_minimum'];
-$temperature_min = $_POST['temperature_min'];
-$temperature_max = $_POST['temperature_max'];
+$food_min = $_POST['food_min'];
+$next_water_check = $_POST['next_water_check'];
+$temp_min = $_POST['temp_min'];
+$temp_max = $_POST['temp_max'];
 $humidity_min = $_POST['humidity_min'];
 $humidity_max= $_POST['humidity_max'];
-$uid = $_SESSION['user']['id'];
+$device_id = $_POST['device_id'];
 
         $query = " 
-            update devices  
+            update user_settings  
              set 
-                food_minimum = :food_minimum, 
-                water = :water, 
-                temperature_min = :temperature_min,
-                temperature_max = :temperature_max,
+                food_min = :food_min, 
+                next_water_check = :next_water_check, 
+                temp_min = :temp_min,
+                temp_max = :temp_max,
                 humidity_min = :humidity_min,
                 humidity_max = :humidity_max
-             WHERE id=:uid;
+             WHERE device_id=:device_id;
         "; 
 
 
         $query_params = array( 
-            ':uid' => $uid,
-            ':food_minimum' => $food_minimum, 
-            ':water' => $water, 
-            ':temperature_min' => $temperature_min, 
-            ':temperature_max' => $temperature_max, 
+            ':device_id' => $device_id,
+            ':food_min' => $food_min, 
+            ':next_water_check' => $next_water_check, 
+            ':temp_min' => $temp_min, 
+            ':temp_max' => $temp_max, 
             ':humidity_min' => $humidity_min,
             ':humidity_max' => $humidity_max,
         ); 

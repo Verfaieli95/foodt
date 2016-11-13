@@ -78,9 +78,10 @@
 </header>
 				<nav id="nav">
 					<ul>
-						<li><a href="#one">Food Tracker</a></li>
+						<li><a href="#one" class="active">Food tracker</a></li>
 						<li><a href="#two">Settings</a></li>
-                        <li><a href="#three">About</a></li>
+                        <li><a href="#three">Charts</a></li>
+                        <li><a href="#four">About</a></li>
                         <li><a href="http://www.fajnyblog.com">Blog</a></li> linka walnac tu
 					</ul>
 				</nav>
@@ -102,100 +103,15 @@
                             <section id="one">
 								<div class="container">
 									<header class="major">
-										<h2>Food Tracker</h2>
-										<h4>Values:</h4>
-                                        
-                                        
-                <?php
-                    if(!empty($_SESSION['user'])) 
-                    {  
-                        $uid = $_SESSION['user']['id'];
-                        $query = " 
-                            SELECT 
-                            device_id
-                            FROM user_devices 
-                            WHERE 
-                            user_id = :uid
-                        "; 
-                        $query_params = array( 
-                            ':uid' => $uid,
-                        ); 
+										<h2>Food tracker</h2>
+								
 
-                        try 
-                        { 
-                            $stmt = $db->prepare($query); 
-                            $result = $stmt->execute($query_params); 
-                        } 
-                        catch(PDOException $ex) 
-                        { 
-                            die("Please don't leave anything blank!"); 
-                        } 
-                        $row = $stmt->fetch(); 
-
-                        if($row) 
-                        { 
-                            $query = " 
-                                SELECT 
-                                timestamp,
-                                food_level,
-                                temp_level,
-                                humidity_level
-                                FROM device_values 
-                                WHERE 
-                                device_id = :devid
-                            "; 
-                            $query_params = array( 
-                                ':devid' => $row['device_id'],
-                            ); 
-
-                            try 
-                            { 
-                                $stmt = $db->prepare($query); 
-                                $result = $stmt->execute($query_params); 
-                            } 
-                                catch(PDOException $ex) 
-                            { 
-                                die("Please don't leave anything blank!"); 
-                            } 
-                            $timestampes = [];
-                            $food_levels = [];
-
-                            echo '<table border="1">
-<tbody>
-<tr>
-<td>timestamp</td>
-<td>food_level</td>
-<td>temp_level</td>
-<td>humidity_level</td>
-</tr>
-';
-
-                            while($devices_row = $stmt->fetch())
-                            {
-                                echo '<tr><td>';
-                                echo $devices_row['timestamp'];
-                                array_push($timestampes, $devices_row['timestamp']);
-                                echo '</td><td>';
-                                echo $devices_row['food_level'];
-                                array_push($food_levels, $devices_row['food_level']);
-                                echo '</td><td>';
-                                echo $devices_row['temp_level'];
-                                echo '</td><td>';
-                                echo $devices_row['humidity_level'];
-                                echo '</td></tr>';
-                            }
-echo '</tr>
-</tbody>
-</table>';
-                        } 
-                    }   
-
-                ?>
 									</header>
 									<p>
-                                    <canvas id="myChart" width="300" height="300"></canvas>
+                                 
                                     </p>
-
+								</div>
+							</section>
                             <section id="two">
 								<div class="container">
 									<header class="major">
@@ -204,7 +120,6 @@ echo '</tr>
 									<p>
                                     <p>
                                     <?php
-                                    
                                     if(!empty($_SESSION['user'])) 
                                     {  
 									echo 'Here you can set minimum amount of food, temperature and humidity levels, below which site will send a notification to your phone. You can also set a reminder for changing water in water bottle.';
@@ -319,23 +234,29 @@ echo '</tr>
 												echo '"><br>';
 												echo '<input type="submit" value="Submit">
                                                         </form>';
-											}}
-										
+											}
+										}
                
+                if($device_info)
 											{
-                
+												$query = " 
+                                                    SELECT 
+                                                        food_min, 
+                                                        next_water_check, 
+                                                        temp_min, 
+                                                        temp_max,
+                                                        humidity_min,
+                                                        humidity_max
+                                                    FROM user_settings 
+                                                    WHERE 
+                                                        device_id = :device_id
+                                                ";
 				echo '<form action="devices.php" method="post" data-ajax="false">';
                 echo 'Add new device.';
                 echo '<br>Device name: <input type="text" name="device_name" id="device_name" value="">';
                 echo '<br>Device ID: <input type="number" name="device_id" id="device_id" value="">';
-				echo '<input type = "hidden" name="food_min" id="food_min" value= "0">';
-				echo '<input type = "hidden" name="next_water_check" id="next_water_check" value= "0">';
-				echo '<input type = "hidden" name="temp_min" id="temp_min" value= "0">';
-				echo '<input type = "hidden" name="temp_max" id="temp_max" value= "1">';
-				echo '<input type = "hidden" name="humidity_min" id="humidity_min" value= "0">';
-				echo '<input type = "hidden" name="humidity_max" id="humidity_max" value= "0">';
                 echo '<input type="submit" value="Add device">
-                </form>';}
+                </form>';
 
 
 }
@@ -347,10 +268,91 @@ echo '</tr>
                                     </p>
 								</div>
 							</section>
-                                    
-                                    								</div>
+							<section id="three">
+								<div class="container">
+									<header class="major">
+										<h2>Charts</h2>
+										<p>Values:</p>
+                                        
+                                        
+                <?php
+                    if(!empty($_SESSION['user'])) 
+                    {  
+                        $uid = $_SESSION['user']['id'];
+                        $query = " 
+                            SELECT 
+                            device_id
+                            FROM user_devices 
+                            WHERE 
+                            user_id = :uid
+                        "; 
+                        $query_params = array( 
+                            ':uid' => $uid,
+                        ); 
+
+                        try 
+                        { 
+                            $stmt = $db->prepare($query); 
+                            $result = $stmt->execute($query_params); 
+                        } 
+                        catch(PDOException $ex) 
+                        { 
+                            die("Please don't leave anything blank!"); 
+                        } 
+                        $row = $stmt->fetch(); 
+
+                        if($row) 
+                        { 
+                            $query = " 
+                                SELECT 
+                                timestamp,
+                                food_level,
+                                temp_level,
+                                humidity_level
+                                FROM device_values 
+                                WHERE 
+                                device_id = :devid
+                            "; 
+                            $query_params = array( 
+                                ':devid' => $row['device_id'],
+                            ); 
+
+                            try 
+                            { 
+                                $stmt = $db->prepare($query); 
+                                $result = $stmt->execute($query_params); 
+                            } 
+                                catch(PDOException $ex) 
+                            { 
+                                die("Please don't leave anything blank!"); 
+                            } 
+                            $timestampes = [];
+                            $food_levels = [];
+                            while($devices_row = $stmt->fetch())
+                            {
+                                echo '<br><br>timestamp: ';
+                                echo $devices_row['timestamp'];
+                                array_push($timestampes, $devices_row['timestamp']);
+                                echo '<br>food_level: ';
+                                echo $devices_row['food_level'];
+                                array_push($food_levels, $devices_row['food_level']);
+                                echo '<br>temp_level: ';
+                                echo $devices_row['temp_level'];
+                                echo '<br>humidity_level: ';
+                                echo $devices_row['humidity_level'];
+                                echo '<br><br>';
+                            }
+                        } 
+                    }   
+
+                ?>
+									</header>
+									<p>
+                                    <canvas id="myChart" width="300" height="300"></canvas>
+                                    </p>
+								</div>
 							</section>
-                            <section id="three">
+                            <section id="four">
 								<div class="container">
 									<header class="major">
 										<h2>About</h2>
@@ -364,7 +366,6 @@ echo '</tr>
 							</section>
                             
 					</div>
-							
 
 				<!-- Footer -->
 					<section id="footer">
