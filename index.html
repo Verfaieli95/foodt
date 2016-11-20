@@ -130,10 +130,11 @@
                         { 
                             die("Please don't leave anything blank!"); 
                         } 
-                        $row = $stmt->fetch(); 
-
-                        if($row) 
-                        { 
+						
+						while($row = $stmt->fetch())
+						{
+							echo count($row);
+							echo $row['device_id'];
                             $query = " 
                                 SELECT 
                                 timestamp,
@@ -159,16 +160,17 @@
                             } 
                             $timestampes = [];
                             $food_levels = [];
-
+							$temp_values = [];
+							$humidity_level = [];
                             echo '<table border="1">
-<tbody>
-<tr>
-<td>timestamp</td>
-<td>food_level</td>
-<td>temp_level</td>
-<td>humidity_level</td>
-</tr>
-';
+								<tbody>
+								<tr>
+								<td>timestamp</td>
+								<td>food_level</td>
+								<td>temp_level</td>
+								<td>humidity_level</td>
+								</tr>
+								';
 
                             while($devices_row = $stmt->fetch())
                             {
@@ -180,21 +182,25 @@
                                 array_push($food_levels, $devices_row['food_level']);
                                 echo '</td><td>';
                                 echo $devices_row['temp_level'];
+								array_push($temp_values, $devices_row['temp_level']);
                                 echo '</td><td>';
                                 echo $devices_row['humidity_level'];
+								array_push($humidity_level, $devices_row['humidity_level']);
                                 echo '</td></tr>';
                             }
-echo '</tr>
-</tbody>
-</table>';
+							echo '</tr>
+								</tbody>
+								</table>
+								</header>
+								<p>
+								<canvas id="myChart" width="300" height="300"></canvas>
+								</p>
+								';
                         } 
                     }   
-
                 ?>
-									</header>
-									<p>
-                                    <canvas id="myChart" width="300" height="300"></canvas>
-                                    </p>
+									
+								
 
                             <section id="two">
 								<div class="container">
@@ -319,7 +325,8 @@ echo '</tr>
 												echo '"><br>';
 												echo '<input type="submit" value="Submit">
                                                         </form>';
-											}}
+											}
+											}
 										
                
 											{
@@ -395,8 +402,8 @@ echo '</tr>
             <!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
 
             <script>    
+			
                 var ctx = $("#myChart");
-                
                 var myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -410,6 +417,7 @@ echo '</tr>
                     ],
                     datasets: [{
                         label: 'Food level',
+						yAxisID: "y-axis-1000",
                         data: [<?php
                                 foreach ($food_levels as $value)
                                 {
@@ -418,31 +426,90 @@ echo '</tr>
                                 }?>
                         ],
                         backgroundColor: [
+                            'rgba(75, 192, 192, 0.2)',
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                        ],
+                        borderWidth: 1
+					},
+					{
+                        label: 'Temperature',
+						yAxisID: "y-axis-100",
+                        data: [<?php
+                                foreach ($temp_values as $value)
+                                {
+                                    echo $value;
+                                    echo ', ';
+                                }?>
+                        ],
+                        backgroundColor: [
                             'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
+
+                        ],
+                        borderColor: [
+                            'rgba(255,99,132,1)',
+  
+                        ],
+                        borderWidth: 1
+					},
+					{
+                        label: 'Humidity level',
+						yAxisID: "y-axis-100",
+                        data: [<?php
+                                foreach ($humidity_level as $value)
+                                {
+                                    echo $value;
+                                    echo ', ';
+                                }?>
+                        ],
+                        backgroundColor: [
                             'rgba(255, 206, 86, 0.2)',
                             'rgba(75, 192, 192, 0.2)',
                         ],
                         borderColor: [
-                            'rgba(255,99,132,1)',
-                            'rgba(54, 162, 235, 1)',
                             'rgba(255, 206, 86, 1)',
                             'rgba(75, 192, 192, 1)',
                         ],
                         borderWidth: 1
-                    }]
+					},
+					
+					]
                 },
                 options: {
+					
                     scales: {
                         yAxes: [{
+							scaleLabel: {
+								display: true,
+								labelString: 'Temperature [Celsius] / Humidity[%]'
+							},
+							position: "right",
+							id: "y-axis-100",
                             ticks: {
                                 beginAtZero:true
                             }
-                        }]
-                    }
+                        },
+						{
+							scaleLabel: {
+								display: true,
+								labelString: 'Food [g]'
+							},
+							position: "left",
+							id: "y-axis-1000"
+						}
+						]
+	
+                    },
+					tooltips: {
+						enabled: true
+					},
+					hover: {
+					mode: 'index'
+					}
                 }
             });
                 
-            </script>   
+            </script>           
 	</body>
 </html>
