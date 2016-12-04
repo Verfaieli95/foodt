@@ -103,17 +103,25 @@
 								<div class="container">
 									<header class="major">
 										<h2>Food Tracker</h2>
-										<h4>Values:</h4>
+										</header>
+										
                                         
                                         
                 <?php
+				
                     if(!empty($_SESSION['user'])) 
-                    {  
+					{
+						
+					
+                    {  echo '<h4>Values:</h4>';
+
                         $uid = $_SESSION['user']['id'];
                         $query = " 
-                            SELECT 
-                            device_id
+							SELECT 
+                            user_devices.device_id, devices.device_name
                             FROM user_devices 
+                            LEFT JOIN devices
+                            ON user_devices.device_id = devices.device_id
                             WHERE 
                             user_id = :uid
                         "; 
@@ -130,12 +138,25 @@
                         { 
                             die("Please don't leave anything blank!"); 
                         } 
+						$resultSet = [];
+						while ($cRecord =  $stmt->fetch()) {
+						 array_push($resultSet, $cRecord);
+						}
 						
-						while($row = $stmt->fetch())
-						{
-							echo count($row);
-							echo $row['device_id'];
-                            $query = " 
+						//echo 'Number of devices: ';
+						//echo count($resultSet);
+						echo 'Choose device you want to see data for: ';
+						echo '<select id="deviceSelect" onchange="newDeviceID()" style="color: black;">';
+						$resultData = array();
+						foreach ($resultSet as $item) {
+							echo '<option value="';
+							echo $item['device_id'];
+							echo '">';
+							echo $item['device_name'];
+							$resultData[$item['device_id']] = array();
+							
+							
+							$query = " 
                                 SELECT 
                                 timestamp,
                                 food_level,
@@ -146,7 +167,7 @@
                                 device_id = :devid
                             "; 
                             $query_params = array( 
-                                ':devid' => $row['device_id'],
+                                ':devid' => $item['device_id'],
                             ); 
 
                             try 
@@ -158,48 +179,84 @@
                             { 
                                 die("Please don't leave anything blank!"); 
                             } 
-                            $timestampes = [];
+							$timestampes = [];
                             $food_levels = [];
 							$temp_values = [];
 							$humidity_level = [];
-                            echo '<table border="1">
-								<tbody>
-								<tr>
-								<td>timestamp</td>
-								<td>food_level</td>
-								<td>temp_level</td>
-								<td>humidity_level</td>
-								</tr>
-								';
-
-                            while($devices_row = $stmt->fetch())
+							while($devices_row = $stmt->fetch())
                             {
-                                echo '<tr><td>';
-                                echo $devices_row['timestamp'];
-                                array_push($timestampes, $devices_row['timestamp']);
-                                echo '</td><td>';
-                                echo $devices_row['food_level'];
-                                array_push($food_levels, $devices_row['food_level']);
-                                echo '</td><td>';
-                                echo $devices_row['temp_level'];
-								array_push($temp_values, $devices_row['temp_level']);
-                                echo '</td><td>';
-                                echo $devices_row['humidity_level'];
-								array_push($humidity_level, $devices_row['humidity_level']);
-                                echo '</td></tr>';
-                            }
-							echo '</tr>
-								</tbody>
-								</table>
-								</header>
-								<p>
-								<canvas id="myChart" width="300" height="300"></canvas>
-								</p>
-								';
-                        } 
-                    }   
-                ?>
-									
+							array_push($timestampes, $devices_row['timestamp']);
+							array_push($food_levels, $devices_row['food_level']);
+							array_push($temp_values, $devices_row['temp_level']);
+							array_push($humidity_level, $devices_row['humidity_level']);
+							 }
+							$resultData[$item['device_id']]['timestampes'] = $timestampes;
+							$resultData[$item['device_id']]['food_levels'] = $food_levels;
+							$resultData[$item['device_id']]['temp_values'] = $temp_values;
+							$resultData[$item['device_id']]['humidity_level'] = $humidity_level;
+							}
+						echo '</select>';
+						//echo print_r($resultData);
+						$js_array = json_encode($resultData);
+						echo "<script type='text/javascript'>";
+						echo "var jsResultData = ". $js_array . ";\n";
+						
+						//echo "newDeviceID();";
+						echo '</script><br>
+						</p>
+				<p id="demo"></p>
+				
+				<p>
+				<canvas id="myChart" width="300" height="300"></canvas>
+				</p>
+						<br>
+						
+						<form action="assets/php/mailService.php" method="get" data-ajax="false">
+						<input type="hidden" name="id" value="';
+						echo $_SESSION['user']['id'];
+						echo '">
+						<input type="submit" value="Send to email (temporary)">
+						</form>
+						';
+					}
+					}
+					else
+					{
+						echo '<p>';
+						echo "Content here is available only to members. Please register and login!";
+					}
+			   ?>
+				
+				<script type='text/javascript'>
+				
+				//window.onload = newDeviceID();
+				
+				function newDeviceID(){
+					
+					var x = jsResultData[document.getElementById("deviceSelect").value];
+					document.getElementById("demo").innerHTML = "You selected: " + x.timestampes;
+					var HTMLtable = "<table border='1'><tbody><tr><td>Checked on:</td><td>Food level:</td><td>Temperature level:</td><td>Humidity level:</td></tr>";
+					myChart.data.labels = x.timestampes
+					myChart.data.datasets[0].data = x.food_levels;
+					myChart.data.datasets[1].data = x.temp_values;
+					myChart.data.datasets[2].data = x.humidity_level;
+					for(var i=0; i<x.timestampes.length; i++) {
+						HTMLtable += "<tr>";
+						HTMLtable += "<td>"+x.timestampes[i]+"</td>";
+						HTMLtable += "<td>"+x.food_levels[i]+"</td>";
+						HTMLtable += "<td>"+x.temp_values[i]+"</td>";
+						HTMLtable += "<td>"+x.humidity_level[i]+"</td>";
+						HTMLtable += "</tr>";
+					}
+					
+				HTMLtable += "</tr></tbody></table>";
+				document.getElementById("demo").innerHTML = HTMLtable;
+				myChart.update();
+				}
+			
+				</script>
+						
+							</section>	
 								
 
                             <section id="two">
@@ -214,15 +271,29 @@
                                     if(!empty($_SESSION['user'])) 
                                     {  
 									echo 'Here you can set minimum amount of food, temperature and humidity levels, below which site will send a notification to your phone. You can also set a reminder for changing water in water bottle.';
-                                    echo '<br><br>Your devices:<br><br>';
+                                    echo '<br><br>Select device:<br><br>';
+									
+									echo '<select id="selectedDeviceSettings" onchange="newDeviceIDsettings()" style="color: black;">';
+									echo '<option value="">';
+									foreach ($resultSet as $item) {
+									echo '<option value="';
+									echo $item['device_id'];
+									echo '">';
+									echo $item['device_name'];
+									}
+									echo '</select>';
+									echo '<div id="deviceSettingsWrapper" style="display: block;">';
+									echo '<br>';
                                     $uid = $_SESSION['user']['id'];
                        
                                         $query = " 
-                                                    SELECT 
-                                                        device_id
-                                                    FROM user_devices 
-                                                    WHERE 
-                                                        user_id = :uid
+											SELECT 
+											user_devices.device_id, devices.device_name
+											FROM user_devices 
+											LEFT JOIN devices
+											ON user_devices.device_id = devices.device_id
+											WHERE 
+											user_id = :uid
                                                 "; 
                                         $query_params = array( 
                                             ':uid' => $uid,
@@ -291,47 +362,82 @@
 													die("Please don't leave anything blank!"); 
 												} 			
 												$device_settings = $stmt3->fetch();
-												echo 'ID: ';
-												echo $devices_row['device_id'];
-												echo '<br>Device name: ';
-												echo $device_info['device_name'];
-												echo '<br>Last update: ';
+												echo '<div id="device_settings_';
+												echo $devices_row['device_id']; 
+												echo '" style="display: none;">';
+												echo '
+												<form action="insert.php" method="post" data-ajax="false">
+												<table style="width: 100%;" >
+													<tbody>
+													';
+												// echo '<tr><td>
+												// Device name: </td><td>';
+												// echo $device_info['device_name'];
+												
+												// echo '</td></tr>';
+												
+												echo '<tr><td>Last update: ';
+												
+
 												echo $device_info['last_update'];
-												echo '<form action="insert.php" method="post" data-ajax="false">';
+												echo '</td><td>ID: ';
+												echo $devices_row['device_id'];
+												echo '</td></tr>
+												<tr><td>
+												';
 												echo '<input type="hidden"  name="device_id" id="device_id" value="' ;
 												echo $devices_row['device_id'];
-												echo '"';
-												echo '<br>Minimum amount of food in grams: <input type="number" min="1" name="food_min" id="food_min" value="';
+												echo '">
+												
+												<label for="food_min">Minimum amount of food [g]:</label>
+												</td><td>
+												<input type="number" min="1" name="food_min" id="food_min" value="';
 												echo $device_settings['food_min'];
-												echo '"><br>Next water level check on: <input type="timestamp" name="next_water_check" min="1" id="next_water_check" value="';
-												echo $device_settings['next_water_check'];
-												/*if ($device_settings['next_water_check'] != null)
-												{
+												echo '"></td></tr>' ;
+												echo '<tr><td>
+												<label for="next_water_check">Next water level check on: </label></td><td>
+												<input type="text" name="next_water_check" id="next_water_check" placeholder="';
+												echo "'";
+												if ($device_settings['next_water_check'] != null)
+												 {
 													echo $device_settings['next_water_check'];
-												}
+												 }
 												else 
 												{
 													$date = new DateTime();
-													echo $date->format(Y-m-d H:i:s') . "\n";
-												}*/
-												echo '"><br>Temperature in Celsius degrees between: <input type="number" name="temp_min" min="1" max="50" id="temp_min" value="';
+													echo $date->format('Y-m-d H:i:s') . "\n";
+												}
+												
+												echo "'";
+												echo '"/></td></tr>
+												<tr><td>
+												<label for="temp_min">Minimum temperature [°C]: </label></td><td>
+												<input type="number" name="temp_min" min="1" max="50" id="temp_min" value="';
 												echo $device_settings['temp_min'];
-												echo '"><br>and: <input type="number" name="temp_max" min="1" max="50" id="temp_max" value="';
+												echo '"></td></tr><tr><td>
+												<label for="temp_max">Maximum temperature [°C]: </label></td><td>
+												
+												<input type="number" name="temp_max" min="1" max="50" id="temp_max" value="';
 												echo $device_settings['temp_max'];
-												echo '"><br>Humidity in % between:<input type="number" name="humidity_min" min="1" max="100" id="humidity_min" value="';
+												echo '"></td></tr><tr><td>
+												<label for="humidity_min">Maximum humidity [%]:</label></td><td>
+												<input type="number" name="humidity_min" min="1" max="100" id="humidity_min" value="';
 												echo $device_settings['humidity_min'];
-												echo '"><br>and:<input type="number" name="humidity_max" min="1" max="100" id="humidity_max" value="';
+												echo '"></td></tr><tr><td>
+												<label for="humidity_max">Minimum humidity [%]:</label></td><td><input type="number" name="humidity_max" min="1" max="100" id="humidity_max" value="';
 												echo $device_settings['humidity_max'];
-												echo '"><br>';
+												echo '"></td></tr>
+												</tbody>
+												</table>';
 												echo '<input type="submit" value="Submit">
-                                                        </form>';
+                                                        </form></div>';
 											}
 											}
 										
                
 											{
                 
-				echo '<form action="devices.php" method="post" data-ajax="false">';
+				echo '</div><form action="devices.php" method="post" data-ajax="false">';
                 echo 'Add new device.';
                 echo '<br>Device name: <input type="text" name="device_name" id="device_name" value="">';
                 echo '<br>Device ID: <input type="number" name="device_id" id="device_id" value="">';
@@ -352,10 +458,23 @@
                                                                                             }
 					                   ?>
                                     </p>
-								</div>
-							</section>
-                                    
-                                    								</div>
+				<p id="demosettings"></p>
+				<script type='text/javascript'>
+				
+				function newDeviceIDsettings(){
+					
+					var x = jsResultData[document.getElementById("selectedDeviceSettings").value];
+					var deviceSettingsID = "#device_settings_" + document.getElementById("selectedDeviceSettings").value;
+					console.log(deviceSettingsID);
+					$('#deviceSettingsWrapper').children().hide();
+					$(deviceSettingsID).show();
+
+					}
+					
+				
+
+				</script>
+									
 							</section>
                             <section id="three">
 								<div class="container">
@@ -390,6 +509,16 @@
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
 			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/jquery.timepicker.min.js"></script>
+			<script src="assets/js/jquery.datepair.min.js"></script>
+			
+			<script src="assets/js/flatpickr.js"></script>
+			<?php
+			if(!empty($_SESSION['user'])) 
+				{
+					echo '<script src="assets/js/jquery.scrollzer.min.js"></script>';
+				}
+			?>
 			<script src="assets/js/skel.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
@@ -397,33 +526,36 @@
             <script src="assets/js/Chart.js"></script>
             <!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
             <link rel="stylesheet" href="assets/css/main.css" />
-        
+			<link rel="stylesheet" href="assets/css/flatpickr.min.css">
             <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
             <!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
 
             <script>    
 			
+			function sendtoMail(){
+				var canvasData = myChart.toBase64Image();
+				var ajax = new XMLHttpRequest();
+				ajax.open("POST",'assets/php/saveImage.php',false);
+				ajax.setRequestHeader('Content-Type', 'application/upload');
+				ajax.send(canvasData);
+			}
+			
+
+				flatpickr("#next_water_check", {
+					utc: false,
+					enableTime: true,
+					time_24hr: true
+				});
+				
                 var ctx = $("#myChart");
                 var myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [<?php
-                            foreach ($timestampes as $value)
-                            {
-                                echo '"';
-                                echo $value;
-                                echo '", ';
-                            }?>
-                    ],
+                    labels: ["0"],
                     datasets: [{
                         label: 'Food level',
 						yAxisID: "y-axis-1000",
-                        data: [<?php
-                                foreach ($food_levels as $value)
-                                {
-                                    echo $value;
-                                    echo ', ';
-                                }?>
+                        data: ["0"
                         ],
                         backgroundColor: [
                             'rgba(75, 192, 192, 0.2)',
@@ -436,12 +568,7 @@
 					{
                         label: 'Temperature',
 						yAxisID: "y-axis-100",
-                        data: [<?php
-                                foreach ($temp_values as $value)
-                                {
-                                    echo $value;
-                                    echo ', ';
-                                }?>
+                        data: ["0"
                         ],
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.2)',
@@ -456,12 +583,7 @@
 					{
                         label: 'Humidity level',
 						yAxisID: "y-axis-100",
-                        data: [<?php
-                                foreach ($humidity_level as $value)
-                                {
-                                    echo $value;
-                                    echo ', ';
-                                }?>
+                        data: ["0"
                         ],
                         backgroundColor: [
                             'rgba(255, 206, 86, 0.2)',
@@ -482,7 +604,7 @@
                         yAxes: [{
 							scaleLabel: {
 								display: true,
-								labelString: 'Temperature [Celsius] / Humidity[%]'
+								labelString: 'Temperature [Celsius] / Humidity [%]'
 							},
 							position: "right",
 							id: "y-axis-100",
@@ -509,7 +631,16 @@
 					}
                 }
             });
-                
+       
+			<?php
+			if(!empty($_SESSION['user'])) 
+					{
+						echo '$().ready(function() {
+							console.log("zaladowane");
+							newDeviceID();
+						});';
+					}
+						?>
             </script>           
 	</body>
 </html>
